@@ -1,5 +1,5 @@
 # Math.js to JavaScript transpiler
-Tiny transpiler made with [foldmaker.js](https://github.com/foldmaker), that converts mixed [math.js](https://github.com/josdejong/mathjs/) and JS syntax into [acorn](https://github.com/acornjs/acorn)-parsable format.
+Tiny transpiler made with [foldmaker.js](https://github.com/foldmaker), that converts mixed [math.js](https://github.com/josdejong/mathjs/) and JS syntax into [acorn](https://github.com/acornjs/acorn)-parsable format. The following transform is achieved only in ~50 lines, in a very straightforward fashion.
 
 
 ```js
