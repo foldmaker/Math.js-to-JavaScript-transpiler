@@ -1,5 +1,5 @@
-# Math.js-to-JavaScript-transpiler
-Tiny transpiler made with [foldmaker.js](https://github.com/foldmaker), that converts mixed syntax of JavaScript-Math.js into parseable JavaScript.
+# Math.js to JavaScript transpiler
+Tiny transpiler made with [foldmaker.js](https://github.com/foldmaker), that converts mixed [math.js](https://github.com/josdejong/mathjs/) and JS syntax into [acorn](https://github.com/acornjs/acorn)-parsable format.
 
 
 ```js
