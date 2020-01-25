@@ -2,7 +2,7 @@ import Foldmaker, { tokenize, flatten } from './foldmaker'
 
 let REGEX = /^(if|else|while|for)$/
 
-export let infiniteLoopProtection = (string, settings = { debug: true }) => {
+export default (string, settings = {}) => {
   let tokens = tokenize(
     string,
     [
@@ -29,13 +29,10 @@ export let infiniteLoopProtection = (string, settings = { debug: true }) => {
       // join expressions together
       .parse(/e[e, ]+|e\([e, \n]*?\)/, result => {
         if (result[0].includes('\n'))
-          return [
-            'e',
-            flatten(result[0])
-              .join('')
-              .replace(/\n/g, '${_multi}\n')
-          ]
-        else return ['e', result]
+          result = flatten(result[0])
+            .join('')
+            .replace(/\n/g, '${_multi}\n')
+        return ['e', result]
       })
       // wrap expressions
       .parse(/e/, result => {
