@@ -1,8 +1,8 @@
-import Foldmaker, { tokenize, flatten } from 'foldmaker'
+import Foldmaker, { tokenize, flatten } from './foldmaker'
 
-let KEYWORDS = /^(while|for|if|else)$/
+let REGEX = /^(if|else|while|for)$/
 
-export let transpile = (string, settings = {debug: true}) => {
+export let infiniteLoopProtection = (string, settings = { debug: true }) => {
   let tokens = tokenize(
     string,
     [
@@ -17,66 +17,38 @@ export let transpile = (string, settings = {debug: true}) => {
       ['e', /[\s\S]/] // Unknown
     ],
     ({ type, value }) => {
-      if (type === 'i') type = KEYWORDS.test(value) ? 'k' : 'e'
+      if (type === 'i') type = REGEX.test(value) ? 'k' : 'e'
       else if (type === 's') type = value
       else if (type === 'c' && settings.debug) value = '/*' + value.substring(2) + ' */'
       return { type, value }
     }
   )
 
-  let result = Foldmaker
-    .from(tokens)
-    // Join expression tokens together
-    .parse( 
-      [
-        ['EXPRESSION', /e[e, ]+|e\(e?\)/],
-        ['DEFAULT', /[\s\n\S]/]
-      ],
-      {
-        EXPRESSION: result => ['e', result]
-      }
-    )
-    // Flatten expressions, ignore spaces
-    .parse(
-      [
-        ['EXPRESSION', /(e)/],
-        ['SPACE', /[ \t]/],
-        ['DEFAULT', /[\s\S]/]
-      ],
-      {
-        EXPRESSION: result => {
-          let val = flatten(result[0]).join('')
-          return '_("' + val.trim() + '")'
-        },
-        // Ignore spaces from now on
-        SPACE: result => null
-      }
-    )
-    .parse(
-      [
-        ['BLOCK', /(\{)([o\n;]*)?(\})/],
-        ['FOR_WHILE_BLOCK', /(k)(\([o ;]*\))\{([o\n;]*)?\}/],
-        ['FOR_WHILE_WITHOUT_CURLY', /(k)(\([o ;]*\))([o\n;]+)/],
-        ['DEFAULT', /[\s\S]/]
-      ],
-      { 
-        BLOCK: result => {
-          let body = flatten(result[2]).join('')
-          return '{_start();' + body + ';_end()}'
-        },
-        FOR_WHILE_BLOCK: result => {
-          let whole = flatten(result[0]).join('')
-          if(['for', 'while', 'if'].includes(result[1][0])) return '{_start();' + whole + ';_end()}'
-          else return whole
-        },
-        FOR_WHILE_WITHOUT_CURLY: result => {
-          let whole = flatten(result[0]).join('')
-          if(['for', 'while', 'if'].includes(result[1][0])) return '{_start();' + whole + ';_end()}'
-          else return whole        }
-      }
-    )
-
-  let temp = result.array.reduce((acc, el) => (acc + el), '')
-  if(settings.debug) temp = temp.split('\n').map((line, i) => (line + ';_line(' + (i + 2) + ')\n')).join('')
-  return temp
+  return (
+    Foldmaker(tokens)
+      // join expressions together
+      .parse(/e[e, ]+|e\([e, \n]*?\)/, result => {
+        if (result[0].includes('\n'))
+          return [
+            'e',
+            flatten(result[0])
+              .join('')
+              .replace(/\n/g, '${_multi}\n')
+          ]
+        else return ['e', result]
+      })
+      // wrap expressions
+      .parse(/e/, result => {
+        let val = flatten(result[0]).join('')
+        return '_(`' + val.trim() + '`)'
+      })
+      .flatten()
+      .join('')
+      .split('\n')
+      .map((line, i) => {
+        if (/multi\}$/.exec(line)) return line.replace(/_multi\}$/, '_multi(' + (i + 2) + ')}\n')
+        return line + ';_line(' + (i + 2) + ')\n'
+      })
+      .join('')
+  )
 }
